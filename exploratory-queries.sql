@@ -118,3 +118,16 @@ FROM payments p
 	USING(hotel_id)
 GROUP BY hotel_name
 ORDER BY gross_revenue;
+
+/* Compare average revenue per each hotel with overall average for all hotels, and calculate the difference between the two. */
+SELECT DISTINCT hotel_name, 
+	ROUND(AVG(amount) OVER(ORDER BY hotel_name), 2) AS avg_per_hotel,
+    ROUND(AVG(amount) OVER(), 2) AS overall_avg,
+    ROUND(AVG(amount) OVER(ORDER BY hotel_name) - AVG(amount) OVER(), 2) AS difference
+FROM hotels
+	INNER JOIN hotel_bookings
+	USING (hotel_id)
+    
+    INNER JOIN payments
+    USING (booking_id)
+ORDER BY avg_per_hotel DESC;
