@@ -24,20 +24,20 @@ LIMIT 1;
 /* Who is the youngest and oldest customer on record? 
    ANSWER: Linda Jackson is the oldest at age 80, borth in 1944. Kimberly Hernandez is the youngest at age 29, born in 1995. */
 WITH youngest AS (SELECT CONCAT(customer_id, ": ", first_name, " ", last_name) AS full_customer,
-	EXTRACT(YEAR FROM birth_date) AS birth_year,
-    YEAR(NOW()) - YEAR(birth_date) AS current_age
-FROM customers
-WHERE birth_date = 
-	(SELECT MAX(birth_date)
-    FROM customers)), 
+		EXTRACT(YEAR FROM birth_date) AS birth_year,
+    		YEAR(NOW()) - YEAR(birth_date) AS current_age
+	FROM customers
+	WHERE birth_date = 
+		(SELECT MAX(birth_date)
+    		FROM customers)), 
     
 oldest AS (SELECT CONCAT(customer_id, ": ", first_name, " ", last_name) AS full_customer,
-	EXTRACT(YEAR FROM birth_date) AS birth_year,
-    YEAR(NOW()) - YEAR(birth_date) AS current_age
-FROM customers
-WHERE birth_date = 
-	(SELECT MIN(birth_date)
-    FROM customers))
+		EXTRACT(YEAR FROM birth_date) AS birth_year,
+    		YEAR(NOW()) - YEAR(birth_date) AS current_age
+	FROM customers
+	WHERE birth_date = 
+		(SELECT MIN(birth_date)
+    		FROM customers))
 
 SELECT *
 FROM oldest
@@ -67,15 +67,17 @@ WITH cavg AS (
 	GROUP BY customer_id
 	ORDER BY avg_amount DESC
 ),
+	
 savg AS (
 	SELECT c.state, 
-		ROUND(AVG(cavg.avg_amount), 2) AS avg_per_state
+	ROUND(AVG(cavg.avg_amount), 2) AS avg_per_state
 	FROM cavg
 		INNER JOIN customers as c
 		USING (customer_id)
 	GROUP BY c.state
 	ORDER BY avg_per_state DESC
 )
+	
 SELECT RANK() OVER(ORDER BY avg_per_state DESC) AS ranking,
 	state,
 	avg_per_state
@@ -91,6 +93,7 @@ WITH ddiff AS (
 		DATEDIFF(check_out_date, check_in_date) AS date_diff
 	FROM hotel_bookings
 ),
+	
 statdiff AS (
 	SELECT years,
 		MIN(date_diff) as min_stay,
@@ -100,6 +103,7 @@ statdiff AS (
 	FROM ddiff
 	GROUP BY years
 )
+	
 SELECT years,
 	avg_stay,
 	min_stay, 
@@ -146,12 +150,12 @@ ORDER BY gross_revenue;
 
 /* Compare average revenue per each hotel with overall average for all hotels, and calculate the difference between the two. */
 SELECT DISTINCT hotel_name, 
-	ROUND(AVG(amount) OVER(ORDER BY hotel_name), 2) AS avg_per_hotel,
+    ROUND(AVG(amount) OVER(ORDER BY hotel_name), 2) AS avg_per_hotel,
     ROUND(AVG(amount) OVER(), 2) AS overall_avg,
     ROUND(AVG(amount) OVER(ORDER BY hotel_name) - AVG(amount) OVER(), 2) AS difference
 FROM hotels
-	INNER JOIN hotel_bookings
-	USING (hotel_id)
+    INNER JOIN hotel_bookings
+    USING (hotel_id)
     
     INNER JOIN payments
     USING (booking_id)
@@ -160,12 +164,12 @@ ORDER BY avg_per_hotel DESC;
 
 /* Calculate spending per customer */
 SELECT CONCAT(customer_id, ": ", first_name, " ", last_name) AS customer_name,
-	AVG(amount) AS avg_spend,
+    AVG(amount) AS avg_spend,
     MIN(amount) AS min_spend,
     MAX(amount) AS max_spend,
     COUNT(amount) AS purchase_count
 FROM payments AS p
-INNER JOIN customers AS c
-USING (customer_id)
+	INNER JOIN customers AS c
+	USING (customer_id)
 GROUP BY customer_id
 ORDER BY avg_spend DESC;
