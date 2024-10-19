@@ -21,6 +21,31 @@ ORDER BY count_state DESC
 LIMIT 1;
 
 
+/* Who is the youngest and oldest customer on record? 
+   ANSWER: Linda Jackson is the oldest at age 80, borth in 1944. Kimberly Hernandez is the youngest at age 29, born in 1995. */
+WITH youngest AS (SELECT CONCAT(customer_id, ": ", first_name, " ", last_name) AS full_customer,
+	EXTRACT(YEAR FROM birth_date) AS birth_year,
+    YEAR(NOW()) - YEAR(birth_date) AS current_age
+FROM customers
+WHERE birth_date = 
+	(SELECT MAX(birth_date)
+    FROM customers)), 
+    
+oldest AS (SELECT CONCAT(customer_id, ": ", first_name, " ", last_name) AS full_customer,
+	EXTRACT(YEAR FROM birth_date) AS birth_year,
+    YEAR(NOW()) - YEAR(birth_date) AS current_age
+FROM customers
+WHERE birth_date = 
+	(SELECT MIN(birth_date)
+    FROM customers))
+
+SELECT *
+FROM oldest
+UNION
+SELECT *
+FROM youngest;
+
+
 /* Find the minimum, average rounded to 2 places, and maximum amount in payments.
 Also find the range, standard deviation, and the count of records in payments.
 ANSWER: Min = 567.89, Avg = 2147.79, Max = 4657.89, Range = 4000, Stdev = approx. 976.58, Count = 35 */
@@ -28,13 +53,13 @@ SELECT MIN(amount) as min_amount,
 	ROUND(AVG(amount), 2) as avg_amount, 
 	MAX(amount) as max_amount,
 	MAX(amount) - MIN(amount) as amount_range,
-	STDDEV_POP(amount) as amount_stdv,
+	ROUND(STDDEV_POP(amount), 2) as amount_stdv,
 	COUNT(*) as count_payments
 FROM payments;
 
 
-/* Rank the rounded average gross revenue per customer, partitioned by customer state, ordered by average per state descending.
-Limit to 5 entries. ANSWER: 1. MD = $3456.78, 2. WA = $3234.56, 3. OR = $2733.96, SC = $2679.01, NV = $2567.89 */
+/* Rank the average gross revenue per customer state. Limit to 5 entries. 
+ANSWER: 1. MD = $3456.78, 2. WA = $3234.56, 3. OR = $2733.96, SC = $2679.01, NV = $2567.89 */
 WITH cavg AS (
 	SELECT customer_id, 
 		AVG(amount) as avg_amount
@@ -99,7 +124,7 @@ SELECT
 	year,
 	month,
 	SUM(gross_rev) OVER(PARTITION BY year, month ORDER BY year, month) AS gross_revenue,
-	AVG(gross_rev) OVER() as overall_avg_gross_revenue
+	AVG(gross_rev) OVER(PARTITION BY year) as overall_avg_gross_revenue
 FROM dtcte
 WHERE year IN (2023, 2024)
 ORDER BY gross_rev DESC;
@@ -131,3 +156,16 @@ FROM hotels
     INNER JOIN payments
     USING (booking_id)
 ORDER BY avg_per_hotel DESC;
+
+
+/* Calculate spending per customer */
+SELECT CONCAT(customer_id, ": ", first_name, " ", last_name) AS customer_name,
+	AVG(amount) AS avg_spend,
+    MIN(amount) AS min_spend,
+    MAX(amount) AS max_spend,
+    COUNT(amount) AS purchase_count
+FROM payments AS p
+INNER JOIN customers AS c
+USING (customer_id)
+GROUP BY customer_id
+ORDER BY avg_spend DESC;
